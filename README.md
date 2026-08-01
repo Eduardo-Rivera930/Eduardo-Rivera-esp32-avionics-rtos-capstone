@@ -72,9 +72,9 @@ After the fault is removed:
 
 ## Project Links
 
-- **Wokwi simulation:** Add URL here
-- **Demo video:** Add URL here
-- **GitHub Pages site:** Add URL here
+- **Wokwi simulation:** https://wokwi.com/projects/471102776551998465
+- **Demo video:** https://youtu.be/1dZaKtWwT80
+- **GitHub Pages site:** https://eduardo-rivera930.github.io/Eduardo-Rivera-esp32-avionics-rtos-capstone/
 
 ## Author
 
