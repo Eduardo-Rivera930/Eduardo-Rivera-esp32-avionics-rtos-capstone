@@ -1,0 +1,46 @@
+# Contributing
+
+Thank you for your interest in this project.
+
+This repository is an educational ESP32-S3 and FreeRTOS avionics
+simulation. Contributions that improve documentation, testing,
+observability, portability, or fault handling are welcome.
+
+## Getting Started
+
+1. Fork the repository.
+2. Create a branch for the proposed change.
+3. Make and test the change.
+4. Document any new behavior.
+5. Submit a pull request describing the modification.
+
+## Contribution Guidelines
+
+- Keep the Core 1 real-time pipeline separate from the Core 0
+  networking and observability workload.
+- Avoid indefinite blocking in real-time tasks.
+- Use ISR-safe FreeRTOS functions inside interrupt handlers.
+- Protect shared multi-field system state with an appropriate
+  synchronization primitive.
+- Document task priorities, timing assumptions, queue policies,
+  and failure behavior.
+- Test both nominal and fault-injected operation.
+- Keep code formatting and naming consistent with the existing
+  project.
+
+## Reporting Issues
+
+When reporting an issue, include:
+
+- A description of the observed behavior
+- The expected behavior
+- Steps needed to reproduce the problem
+- Relevant serial output or screenshots
+- Whether the fault-injection mode was active
+- Any source-code changes made before the issue occurred
+
+## Scope
+
+This project is an educational simulation inspired by avionics
+real-time and fault-management practices. It is not intended for
+use in certified or safety-critical airborne equipment.
