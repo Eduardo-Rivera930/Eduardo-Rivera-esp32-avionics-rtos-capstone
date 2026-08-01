@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>Dual-Core Avionics RTOS Project</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #eef2f6;
+      color: #17212b;
+      line-height: 1.6;
+    }
+
+    header {
+      background: #102a43;
+      color: white;
+      padding: 60px 20px;
+      text-align: center;
+    }
+
+    header h1 {
+      margin: 0 0 16px;
+      font-size: 2.5rem;
+    }
+
+    header p {
+      max-width: 750px;
+      margin: auto;
+      color: #d7e3ed;
+      font-size: 1.1rem;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: auto;
+      padding: 30px 20px 60px;
+    }
+
+    section {
+      background: white;
+      margin: 24px 0;
+      padding: 28px;
+      border-radius: 14px;
+      box-shadow: 0 4px 16px rgba(16, 42, 67, 0.12);
+    }
+
+    h2 {
+      color: #243b53;
+      margin-top: 0;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 28px;
+    }
+
+    .button {
+      display: inline-block;
+      padding: 12px 20px;
+      border-radius: 8px;
+      background: #176b2c;
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .button.secondary {
+      background: #174ea6;
+    }
+
+    .button.video {
+      background: #9b1c1c;
+    }
+
+    img {
+      display: block;
+      width: 100%;
+      max-width: 1000px;
+      height: auto;
+      margin: 18px auto;
+      border-radius: 10px;
+    }
+
+    .state-grid {
+      display: grid;
+      grid-template-columns: repeat(
+        auto-fit,
+        minmax(250px, 1fr)
+      );
+      gap: 18px;
+    }
+
+    .state-card {
+      border: 1px solid #d9e2ec;
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .state-card h3 {
+      margin-top: 0;
+      color: #243b53;
+    }
+
+    footer {
+      background: #102a43;
+      color: white;
+      text-align: center;
+      padding: 25px;
+    }
+
+    code {
+      background: #e7edf3;
+      padding: 2px 5px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>
+      Dual-Core Avionics Telemetry and
+      Fault-Monitoring System
+    </h1>
+
+    <p>
+      An ESP32-S3 and FreeRTOS simulation that processes
+      avionics data, measures real-time behavior, monitors
+      task health, and demonstrates controlled degradation
+      and automatic recovery.
+    </p>
+
+    <div class="button-row">
+      <a
+        class="button"
+        href="https://wokwi.com/projects/471102776551998465"
+        target="_blank"
+      >
+        Open Wokwi Simulation
+      </a>
+
+      <a
+        class="button secondary"
+        href="PASTE_REPOSITORY_URL_HERE"
+        target="_blank"
+      >
+        View Source Repository
+      </a>
+
+      <a
+        class="button video"
+        href="PASTE_VIDEO_URL_HERE"
+        target="_blank"
+      >
+        Watch Demo Video
+      </a>
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <h2>Project Overview</h2>
+
+      <p>
+        This project simulates an avionics attitude-processing
+        pipeline using FreeRTOS on an ESP32-S3.
+      </p>
+
+      <p>
+        Core 1 runs the real-time tasks responsible for sensor
+        generation, sensor fusion, telemetry coordination, and
+        response handling. Core 0 runs the Wi-Fi and HTTP
+        observability system.
+      </p>
+
+      <p>
+        The system uses a typed queue, an event group, direct
+        task notifications, a GPIO interrupt, and a mutex-protected
+        status structure.
+      </p>
+    </section>
+
+    <section>
+      <h2>System Architecture</h2>
+
+      <p>
+        The real-time processing pipeline is isolated from the
+        web-monitoring workload by assigning them to separate
+        processor cores.
+      </p>
+
+      <img
+        src="assets/architecture-diagram.png"
+        alt="Dual-core FreeRTOS system architecture diagram"
+      >
+    </section>
+
+    <section>
+      <h2>Fault Injection and Recovery</h2>
+
+      <p>
+        A web-controlled fault introduces a 300 ms delay into
+        the Sensor Fusion task. The producer continues running
+        every 50 ms, causing the queue to fill and new samples
+        to be dropped.
+      </p>
+
+      <div class="state-grid">
+        <div class="state-card">
+          <h3>1. Nominal</h3>
+
+          <img
+            src="assets/nominal-state.png"
+            alt="Nominal system state"
+          >
+
+          <p>
+            Queue depth is near zero, no samples have been
+            dropped, and the system reports
+            <code>NOMINAL</code>.
+          </p>
+        </div>
+
+        <div class="state-card">
+          <h3>2. Degraded</h3>
+
+          <img
+            src="assets/degraded-state.png"
+            alt="Degraded system state"
+          >
+
+          <p>
+            The queue reaches four items, drops increase, and
+            the system reports <code>DEGRADED</code>.
+          </p>
+        </div>
+
+        <div class="state-card">
+          <h3>3. Recovered</h3>
+
+          <img
+            src="assets/recovered-state.png"
+            alt="Recovered system state"
+          >
+
+          <p>
+            After the fault is removed, the queue drains and
+            the system returns to <code>NOMINAL</code>.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Engineering Skills Demonstrated</h2>
+
+      <ul>
+        <li>FreeRTOS task creation and priorities</li>
+        <li>Dual-core workload separation</li>
+        <li>Queue back-pressure and bounded blocking</li>
+        <li>Event-group synchronization</li>
+        <li>Direct task notifications</li>
+        <li>ISR-safe FreeRTOS APIs</li>
+        <li>Mutex-protected shared state</li>
+        <li>Execution-time measurement</li>
+        <li>Fault injection and graceful recovery</li>
+        <li>Embedded Wi-Fi and HTTP monitoring</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>About This Project</h2>
+
+      <p>
+        This is an educational simulation inspired by avionics
+        timing, observability, and fault-management practices.
+        It is not a certified airborne system.
+      </p>
+
+      <p>
+        Developed by Eduardo Rivera, Electrical Engineering
+        student at the University of Central Florida.
+      </p>
+    </section>
+  </main>
+
+  <footer>
+    Dual-Core Avionics RTOS Capstone — Eduardo Rivera
+  </footer>
+</body>
+</html>
