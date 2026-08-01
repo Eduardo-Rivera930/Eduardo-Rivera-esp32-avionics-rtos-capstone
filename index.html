@@ -128,6 +128,93 @@
       padding: 2px 5px;
       border-radius: 4px;
     }
+    .table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 18px;
+  min-width: 760px;
+}
+
+th,
+td {
+  padding: 13px 14px;
+  border: 1px solid #d9e2ec;
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  background: #102a43;
+  color: white;
+}
+
+tr:nth-child(even) {
+  background: #f4f7fa;
+}
+
+.note {
+  margin-top: 18px;
+  padding: 16px;
+  border-left: 5px solid #174ea6;
+  background: #eaf2ff;
+  border-radius: 6px;
+}
+
+.warning-note {
+  margin-top: 18px;
+  padding: 16px;
+  border-left: 5px solid #c62828;
+  background: #fff0f0;
+  border-radius: 6px;
+}
+
+.video-wrapper {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%;
+  height: 0;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #102a43;
+}
+
+.video-wrapper iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.video-placeholder {
+  background: #e7edf3;
+  padding: 40px 20px;
+  text-align: center;
+  border-radius: 12px;
+  color: #486581;
+}
+
+.status-label {
+  display: inline-block;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-weight: bold;
+}
+
+.status-nominal {
+  background: #d8f3dc;
+  color: #176b2c;
+}
+
+.status-degraded {
+  background: #ffd6d6;
+  color: #9b1c1c;
+}
   </style>
 </head>
 
@@ -164,7 +251,7 @@
 
       <a
         class="button video"
-        href="PASTE_VIDEO_URL_HERE"
+        href="#demo"
         target="_blank"
       >
         Watch Demo Video
@@ -195,6 +282,25 @@
       </p>
     </section>
 
+    <section id= "demo">
+      <h2>Project Demonstration</h2>
+    
+      <p>
+        This demonstration shows the nominal avionics pipeline,
+        the FreeRTOS architecture, an injected Sensor Fusion stall,
+        queue saturation, controlled sample loss, and automatic
+        recovery.
+      </p>
+    
+      <div class="video-placeholder">
+        <h3>Demo video coming soon</h3>
+    
+        <p>
+          The final 3–5 minute demonstration will be embedded here.
+        </p>
+      </div>
+    </section>
+    
     <section>
       <h2>System Architecture</h2>
 
@@ -210,6 +316,110 @@
       >
     </section>
 
+    <section>
+      <h2>Task Architecture and Timing Evidence</h2>
+    
+      <p>
+        The real-time pipeline runs on Core 1, while the HTTP
+        observability workload runs on Core 0. Maximum task-body
+        durations were measured using the ESP32 high-resolution
+        timer.
+      </p>
+    
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Task</th>
+              <th>Activation</th>
+              <th>Core</th>
+              <th>Priority</th>
+              <th>Purpose</th>
+              <th>Nominal Maximum</th>
+              <th>Worst Observed</th>
+            </tr>
+          </thead>
+    
+          <tbody>
+            <tr>
+              <td>Attitude Sensor</td>
+              <td>50 ms periodic</td>
+              <td>1</td>
+              <td>8</td>
+              <td>
+                Generate simulated attitude data and send it
+                through the queue
+              </td>
+              <td>89 µs</td>
+              <td>12,850 µs</td>
+            </tr>
+    
+            <tr>
+              <td>Sensor Fusion</td>
+              <td>Queue arrival</td>
+              <td>1</td>
+              <td>8</td>
+              <td>
+                Combine gyroscope and accelerometer roll
+                measurements
+              </td>
+              <td>1,650 µs</td>
+              <td>1,650 µs</td>
+            </tr>
+    
+            <tr>
+              <td>Telemetry Coordinator</td>
+              <td>Event-group rendezvous</td>
+              <td>1</td>
+              <td>9</td>
+              <td>
+                Wait for production and processing completion
+              </td>
+              <td>803 µs</td>
+              <td>803 µs</td>
+            </tr>
+    
+            <tr>
+              <td>Flight Responder</td>
+              <td>Task notification</td>
+              <td>1</td>
+              <td>12</td>
+              <td>
+                Respond to completed pipeline cycles and GPIO
+                interrupts
+              </td>
+              <td>203 µs</td>
+              <td>203 µs</td>
+            </tr>
+    
+            <tr>
+              <td>HTTP Server</td>
+              <td>HTTP request and polling</td>
+              <td>0</td>
+              <td>5</td>
+              <td>
+                Serve telemetry, timing evidence, and fault controls
+              </td>
+              <td>Not instrumented</td>
+              <td>Not instrumented</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    
+      <div class="note">
+        <strong>Why did the producer reach 12,850 µs?</strong>
+    
+        <p>
+          During fault injection, the four-item queue became full.
+          The producer waited for up to 10 ms for queue space before
+          applying its drop-newest policy. The measured value
+          therefore includes bounded queue-waiting time and is not
+          computation-only WCET.
+        </p>
+      </div>
+    </section>
+    
     <section>
       <h2>Fault Injection and Recovery</h2>
 
@@ -264,8 +474,212 @@
           </p>
         </div>
       </div>
+      <h3>Observed Fault Sequence</h3>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>State</th>
+              <th>Fault</th>
+              <th>Queue Depth</th>
+              <th>High-Water Mark</th>
+              <th>Dropped Samples</th>
+              <th>Result</th>
+            </tr>
+          </thead>
+      
+          <tbody>
+            <tr>
+              <td>
+                <span class="status-label status-nominal">
+                  Initial Nominal
+                </span>
+              </td>
+              <td>Off</td>
+              <td>0 / 4</td>
+              <td>1 / 4</td>
+              <td>0</td>
+              <td>
+                Pipeline keeps pace with the 20 Hz producer
+              </td>
+            </tr>
+      
+            <tr>
+              <td>
+                <span class="status-label status-degraded">
+                  Degraded
+                </span>
+              </td>
+              <td>Active</td>
+              <td>4 / 4</td>
+              <td>4 / 4</td>
+              <td>33</td>
+              <td>
+                Queue saturated and controlled sample drops began
+              </td>
+            </tr>
+      
+            <tr>
+              <td>
+                <span class="status-label status-nominal">
+                  Recovered
+                </span>
+              </td>
+              <td>Off</td>
+              <td>0 / 4</td>
+              <td>4 / 4</td>
+              <td>106</td>
+              <td>
+                Queue drained and the system automatically returned
+                to nominal operation
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <div class="note">
+        The dropped-sample total continued increasing briefly after
+        the fault was disabled because the queue was still full while
+        the Sensor Fusion task drained the existing backlog. The
+        high-water mark and drop counter remain visible as historical
+        fault evidence.
+      </div>
     </section>
 
+    <section>
+      <h2>Hazard Analysis</h2>
+    
+      <p>
+        The following table identifies representative failure modes,
+        their effects, and the mechanisms used to detect or mitigate
+        them.
+      </p>
+    
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Hazard</th>
+              <th>System Effect</th>
+              <th>Detection</th>
+              <th>Mitigation</th>
+            </tr>
+          </thead>
+    
+          <tbody>
+            <tr>
+              <td>Sensor Fusion processing stall</td>
+              <td>
+                Queue fills and telemetry data becomes stale
+              </td>
+              <td>
+                Queue depth, high-water mark, dropped-sample count,
+                and heartbeat divergence
+              </td>
+              <td>
+                Enter degraded mode, apply bounded waiting, and drop
+                the newest samples
+              </td>
+            </tr>
+    
+            <tr>
+              <td>Queue overflow</td>
+              <td>
+                Newly generated attitude samples are lost
+              </td>
+              <td>
+                Failed <code>xQueueSend()</code> and incrementing
+                drop counter
+              </td>
+              <td>
+                Wait for up to 10 ms, log the event, then drop the
+                newest sample
+              </td>
+            </tr>
+    
+            <tr>
+              <td>Consumer stops advancing</td>
+              <td>
+                Producer continues while fusion results become stale
+              </td>
+              <td>
+                Producer heartbeat advances while consumer heartbeat
+                stops
+              </td>
+              <td>
+                Report degraded operation; a production system could
+                restart the task or trigger a watchdog response
+              </td>
+            </tr>
+    
+            <tr>
+              <td>Button contact bounce</td>
+              <td>
+                Multiple false interrupt events
+              </td>
+              <td>
+                Unexpectedly high accepted-button count
+              </td>
+              <td>
+                Apply a 200 ms debounce interval inside the ISR
+              </td>
+            </tr>
+    
+            <tr>
+              <td>Invalid responder task handle</td>
+              <td>
+                FreeRTOS assertion or system reset during notification
+              </td>
+              <td>
+                Task-creation return-value and handle checks
+              </td>
+              <td>
+                Create the responder before notification sources and
+                verify its handle
+              </td>
+            </tr>
+    
+            <tr>
+              <td>Inconsistent dashboard snapshot</td>
+              <td>
+                Related fields may describe different processing
+                cycles
+              </td>
+              <td>
+                Contradictory or inconsistent displayed values
+              </td>
+              <td>
+                Protect <code>system_status_t</code> with a mutex and
+                copy the structure before formatting JSON
+              </td>
+            </tr>
+    
+            <tr>
+              <td>HTTP workload interferes with timing</td>
+              <td>
+                Increased scheduling jitter in the real-time pipeline
+              </td>
+              <td>
+                Task-duration and latency measurements
+              </td>
+              <td>
+                Pin networking and the HTTP server to Core 0
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    
+      <div class="warning-note">
+        <strong>Scope statement:</strong>
+        This project is an educational simulation inspired by
+        avionics verification and fault-management practices. It is
+        not a certified airborne system.
+      </div>
+    </section>
+    
     <section>
       <h2>Engineering Skills Demonstrated</h2>
 
